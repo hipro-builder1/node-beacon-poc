@@ -12,49 +12,34 @@
 #define IP_INDEX 0
 #define PORT_INDEX 1
 
-Client::Client (
-  std::string &port, std::string &sender_port, asio::io_context &io_context)
-  : m_port (port),
-    m_sender_port (sender_port),
-    m_io_context (io_context)
-{}
-
 bool
-Client::start ()
+Client::start (short unsigned port)
 {
   std::cout << "Client started." << std::endl;
-  asio::ip::udp::socket socket {m_io_context};
+  asio::ip::udp::socket socket (m_io_context,
+		  boost::asio::ip::udp::endpoint{boost::asio::ip::udp::v4(),port});
 
-  socket.open (asio::ip::udp::v4 ());
+ // socket.open (asio::ip::udp::v4 ());
 
-  unsigned short port_no;
-  unsigned short sender_port_no;
-  std::stringstream conv;
-  conv << m_port;
-  conv >> port_no;
-  conv.str ("");
-  conv.clear();
-  conv << m_sender_port;
-  conv >> sender_port_no;
+//  unsigned short port_no;
+//  unsigned short sender_port_no;
+//  std::stringstream conv;
+//  conv << m_port;
+//  conv >> port_no;
+//  conv.str ("");
+//  conv.clear();
+//  conv << m_sender_port;
+//  conv >> sender_port_no;
 
-  asio::ip::udp::endpoint endpoint {
-    asio::ip::make_address_v4 (LOCALHOST), port_no};
-  asio::ip::udp::endpoint sender_endpoint {
-    asio::ip::make_address_v4 (LOCALHOST), sender_port_no};
-  socket.bind (endpoint);
 
-  std::string recv_data;
+  char recv_data[1024] = {0};
 
   std::cout << "Listening...";
   while (true)
   {
-    recv_data = "";
-    socket.receive_from (asio::buffer (recv_data), sender_endpoint);
-
-    auto res = receive_handler (recv_data);
-    if (!res) {
-      return false;
-    }
+    socket.receive_from (asio::buffer (recv_data), m_client);
+    std::cout << m_client << ": "<< recv_data << std::endl;
+    
   }
 }
 
