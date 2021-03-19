@@ -26,16 +26,15 @@ Client::start ()
 
   std::cout << "Client started at " << port_no << std::endl;
 
-  asio::ip::udp::endpoint endpoint {
-    asio::ip::make_address_v4 (LOCALHOST), port_no};
-  asio::ip::udp::socket socket {m_io_context, endpoint};
+  asio::ip::udp::endpoint endpoint; 
+    //asio::ip::make_address_v4 (LOCALHOST), port_no};
+  asio::ip::udp::socket socket(m_io_context, asio::ip::udp::endpoint(boost::asio::ip::udp::v4(),port_no));
 
-  std::string recv_data;
+  char recv_data[1024] = {};
   while (true)
   {
     std::cout << "Listening..." << std::endl;
-    recv_data = "";
-    socket.receive_from (asio::buffer (recv_data), endpoint);
+    socket.receive_from (asio::buffer (recv_data,1024), endpoint);
 
     auto res = receive_handler (recv_data);
     if (!res) {
@@ -47,7 +46,7 @@ Client::start ()
 bool
 Client::receive_handler (std::string recv_data)
 {
-  std::cout << "Handler called." << std::endl;
+  std::cout << recv_data << std::endl;
 
   if (recv_data.size () == 0) {
     std::cout << "Recieved no data. exiting.";
