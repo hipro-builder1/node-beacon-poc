@@ -7,7 +7,7 @@ namespace asio = ::boost::asio;
 class Client {
 public:
   Client (
-    std::string &port, std::string &sender_port, asio::io_context &io_context);
+    std::string &port, asio::io_context &io_context);
   bool start ();
 
 private:
@@ -18,7 +18,6 @@ private:
 
 private:
   std::string &m_port;
-  std::string &m_sender_port;
   asio::io_context &m_io_context;
 
   std::string m_server_pong;
