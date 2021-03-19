@@ -6,8 +6,7 @@ namespace asio = ::boost::asio;
 
 class Client {
 public:
-  Client (
-    std::string &port, asio::io_context &io_context);
+  Client (std::string &port, asio::io_context &io_context);
   bool start ();
 
 private:

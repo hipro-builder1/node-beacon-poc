@@ -21,29 +21,17 @@ Client::Client (
 bool
 Client::start ()
 {
-  std::cout << "Client started." << std::endl;
-
   unsigned short port_no;
-  std::stringstream conv;
-  conv << m_port;
-  conv >> port_no;
+  port_no = std::stoi (m_port);
 
-  asio::ip::udp::socket socket {
-    m_io_context, asio::ip::udp::endpoint(asio::ip::udp::v4 (), port_no)};
-
-  boost::system::error_code ec;
-  socket.open (asio::ip::udp::v4 (), ec);
-  if (ec) {
-    std::cout << "Error occurred : " << ec.message ();
-  }
+  std::cout << "Client started at " << port_no << std::endl;
 
   asio::ip::udp::endpoint endpoint {
     asio::ip::make_address_v4 (LOCALHOST), port_no};
-  // socket.bind (endpoint);
+  asio::ip::udp::socket socket {m_io_context, endpoint};
 
+  std::cout << "Listening..." << std::endl;
   std::string recv_data;
-
-  std::cout << "Listening...";
   while (true)
   {
     recv_data = "";

@@ -17,8 +17,8 @@ int main (int argc, char **argv)
   boost::asio::io_context io_context;
 
   Client client (port, io_context);
-  io_context.run ();
   client.start ();
+  io_context.run ();
 
   std::cout << "Client closed." << std::endl;
   return 0;
