@@ -30,10 +30,10 @@ Client::start ()
     asio::ip::make_address_v4 (LOCALHOST), port_no};
   asio::ip::udp::socket socket {m_io_context, endpoint};
 
-  std::cout << "Listening..." << std::endl;
   std::string recv_data;
   while (true)
   {
+    std::cout << "Listening..." << std::endl;
     recv_data = "";
     socket.receive_from (asio::buffer (recv_data), endpoint);
 
@@ -65,8 +65,8 @@ Client::receive_handler (std::string recv_data)
 void
 Client::send_ping (std::string server_ip, std::string server_port)
 {
-  std::cout << "Received server : " << server_ip << ":" << server_port;
-  std::cout << std::endl;
+  std::cout << "Received server : " << server_ip << ":" << server_port
+    << std::endl;
 
   std::stringstream conv (server_port);
   unsigned short server_port_no;
@@ -96,6 +96,6 @@ Client::handle_pong (
   }
 
   if (m_server_pong == "pong") {
-    std::cout << "recieved pong";
+    std::cout << "recieved pong" << std::endl;
   }
 }
