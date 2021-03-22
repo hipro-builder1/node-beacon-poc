@@ -10,11 +10,20 @@
 #include "tcp-server-app.h"
 #include "tcp-session.h"
 
+
+TcpServerApp::~TcpServerApp()
+{
+	for(auto shared_ptr_itr : m_vector_tcp_session) {
+		shared_ptr_itr = nullptr;
+	}
+	m_vector_tcp_session.clear();
+}
+
 void
 TcpServerApp::start_accept()
 {
 
-  m_vector_tcp_session.push_back(std::make_shared<TcpSession>(m_io_service));
+  m_vector_tcp_session.emplace_back(std::make_shared<TcpSession>(m_io_service));
   m_acceptor.async_accept(
     (m_vector_tcp_session.back())->socket(),
     boost::bind(
@@ -22,10 +31,10 @@ TcpServerApp::start_accept()
       boost::asio::placeholders::error));
 }
 void
-TcpServerApp::run(std::string tcp_ip_port)
+TcpServerApp::run(std::string broadcast_ip,std::string broadcast_port,std::string tcp_ip_port)
 {
   m_udp_broadcast_server =
-    std::make_unique<UdpServer>("255.255.255.255", "7000", tcp_ip_port);
+    std::make_unique<UdpServer>(broadcast_ip.data(), broadcast_port.data(), tcp_ip_port);
   m_th_udp_server = std::move(
     std::thread(&UdpServer::broadcast_data, m_udp_broadcast_server.get()));
 
@@ -61,6 +70,7 @@ TcpServerApp::stop()
 {
   m_udp_broadcast_server->stop();
   m_th_udp_server.join();
+  m_udp_broadcast_server.reset(nullptr);
   m_io_service.stop();
 }
 
