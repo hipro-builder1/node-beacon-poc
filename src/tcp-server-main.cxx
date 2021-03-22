@@ -15,14 +15,14 @@ int
 main(int argc, char* argv[])
 {
   try {
-    if (argc != 3) {
+    if (argc != 5) {
       std::cerr
-        << "Usage error: async_tcp_ping_pong_server <port> <tcp_ip:port>\n";
+        << "Usage error: async_tcp_ping_pong_server <broadcast_ip> <broadcast_port> <tcp_port> <tcp_ip:port>\n";
       exit(EXIT_FAILURE);
     }
-    TcpServerApp tcp_server_app(atoi(argv[1]));
+    TcpServerApp tcp_server_app(atoi(argv[3]));
 
-    tcp_server_app.run(argv[2]);
+    tcp_server_app.run(argv[1],argv[2],argv[4]);
 
   } catch (std::exception& e) {
     std::cerr << "Exception: " << e.what() << "\n";
