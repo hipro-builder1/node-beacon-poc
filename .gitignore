@@ -34,3 +34,6 @@ build/
 
 # build directory
 client/build
+
+# vscode
+*.vscode
