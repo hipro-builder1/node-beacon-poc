@@ -24,5 +24,6 @@ private:
   asio::io_context &m_io_context;
 
   std::string m_server_pong;
+  asio::io_context m_tcp_context;
   asio::ip::tcp::socket m_tcp_socket;
 };

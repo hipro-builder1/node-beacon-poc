@@ -14,7 +14,7 @@ Client::Client (
   std::string &port, asio::io_context &io_context)
   : m_port (port),
     m_io_context (io_context),
-    m_tcp_socket (io_context)
+    m_tcp_socket (m_tcp_context)
 {}
 
 bool
@@ -70,9 +70,11 @@ Client::send_ping (std::string server_ip, std::string server_port)
   unsigned short server_port_no;
   server_port_no = std::stoi (server_port);
 
-  asio::ip::tcp::endpoint endpoint(
+  m_tcp_context.run ();
+  asio::ip::tcp::endpoint endpoint (
     asio::ip::make_address_v4 (server_ip), server_port_no);
-  m_tcp_socket.async_connect(
+  m_tcp_socket.close ();
+  m_tcp_socket.async_connect (
     endpoint, std::bind (&Client::handle_connect, this, std::placeholders::_1));
 }
 
