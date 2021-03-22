@@ -31,7 +31,8 @@ public:
   {
     start_accept();
   }
-  void run(std::string tcp_ip_port);
+  ~TcpServerApp();
+  void run(std::string broadcast_ip,std::string broadcast_port,std::string tcp_ip_port);
 
 private:
   void sigint_handler(const boost::system::error_code& error, int signal_num);
