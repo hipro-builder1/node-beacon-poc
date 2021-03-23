@@ -10,81 +10,91 @@
 #define IP_INDEX 0
 #define PORT_INDEX 1
 
-Client::Client (
-  std::string &port, asio::io_context &io_context)
-  : m_port (port),
-    m_io_context (io_context),
-    m_tcp_socket (m_tcp_context)
+Client::Client (asio::io_context &io_context, int port)
+  : m_io_context (io_context),
+    m_port (port)
 {}
 
-bool
+void
+Client::build ()
+{
+  std::cout << "Building Client" << std::endl;
+  m_ep_udp_server = std::make_unique <ip::udp::endpoint> (
+    ip::make_address_v4 (LOCALHOST), m_port);
+  m_ep_udp = std::make_unique <ip::udp::endpoint> ();
+  m_sock_udp = std::make_unique <ip::udp::socket> (
+    m_io_context, ip::udp::endpoint (ip::udp::v4 (), m_port));
+}
+
+void
 Client::start ()
 {
-  unsigned short port_no;
-  port_no = std::stoi (m_port);
+  m_sock_udp->async_receive_from (
+    asio::buffer (m_buff), *m_ep_udp,
+    std::bind (
+      &Client::handle_receive, this, std::placeholders::_1,
+      std::placeholders::_2));
 
-  std::cout << "Client started at " << port_no << std::endl;
-
-  asio::ip::udp::endpoint endpoint;
-  asio::ip::udp::socket socket (
-    m_io_context, asio::ip::udp::endpoint {asio::ip::udp::v4 (), port_no});
-
-  char recv_data [1024] = {};
-  while (true)
-  {
-    std::cout << "Waiting for broadcast..." << std::endl;
-    socket.receive_from (
-      asio::buffer (recv_data), endpoint);
-
-    auto res = receive_handler (recv_data);
-    if (!res) {
-      return false;
-    }
-  }
+  std::cout << "Client started at " << m_port << std::endl;
 }
 
-bool
-Client::receive_handler (std::string recv_data)
+void
+Client::handle_receive (const bsys::error_code &ec, std::size_t bytes)
 {
-  std::cout << recv_data << std::endl;
-
-  if (recv_data.size () == 0) {
-    std::cout << "Recieved no data. exiting." << std::endl;
-    return false;
+  if (ec) {
+    std::cout << "ERROR: handle_receive: " << ec.message ();
+    return;
   }
+
+  std::string str_data(m_buff, bytes);
+  std::cout << "Recieved from server : " << str_data << std::endl;
 
   std::vector<std::string> data;
-  boost::split (data, recv_data, boost::is_any_of (":"));
+  boost::split (data, str_data, boost::is_any_of (":"));
 
-  send_ping (data[IP_INDEX], data[PORT_INDEX]);
+  bsys::error_code err;
+  auto server_addr = ip::make_address_v4 (data[IP_INDEX], err);
+  if (err) {
+    std::cout << "Recieved corrupted IP from server, aborting..." << std::endl;
+    std::cout << "ERROR : " << err.message () << std::endl;
+    return;
+  }
 
-  return true;
+  uint16_t tcp_port_no;
+
+  try {
+    tcp_port_no = std::stoi (data[PORT_INDEX]);
+  } catch (std::invalid_argument ia) {
+    std::cerr << "Corrupted port format: " << ia.what () << std::endl;
+    return;
+  } catch (std::out_of_range oor) {
+    std::cerr << "Corrupted port format: " << oor.what () << std::endl;
+    return;
+  } catch (std::exception ex) {
+    std::cerr << "Corrupted port format: " << ex.what () << std::endl;
+    return;
+  }
+
+  m_sock_tcp = std::make_unique<ip::tcp::socket> (m_io_context);
+  auto server_ep =  ip::tcp::endpoint (
+    ip::make_address_v4 (data[IP_INDEX]), tcp_port_no);
+  m_sock_tcp->async_connect (
+    server_ep,
+    std::bind (&Client::handle_connect, this, std::placeholders::_1));
 }
 
 void
-Client::send_ping (std::string server_ip, std::string server_port)
+Client::handle_connect (const bsys::error_code &ec)
 {
-  std::cout << "Received server : " << server_ip << ":" << server_port
-    << std::endl;
+  if (ec) {
+    std::cout << "ERROR: handle_connect: " << ec.message ();
+    return;
+  }
 
-  unsigned short server_port_no;
-  server_port_no = std::stoi (server_port);
+  std::cout << "Connected to server" << std::endl;
 
-  m_tcp_context.run ();
-  asio::ip::tcp::endpoint endpoint (
-    asio::ip::make_address_v4 (server_ip), server_port_no);
-  m_tcp_socket.close ();
-  m_tcp_socket.async_connect (
-    endpoint, std::bind (&Client::handle_connect, this, std::placeholders::_1));
-}
-
-void
-Client::handle_connect (const boost::system::error_code &error)
-{
-  std::cout << "Connected to server." << std::endl;
-
-  m_tcp_socket.async_write_some (
-    asio::buffer ("ping", 4),
+  m_sock_tcp->async_write_some (
+    asio::buffer ("ping"),
     std::bind (
       &Client::handle_write, this, std::placeholders::_1,
       std::placeholders::_2));
@@ -92,12 +102,16 @@ Client::handle_connect (const boost::system::error_code &error)
 
 void
 Client::handle_write (
-  const boost::system::error_code &error, std::size_t bytes_transferred)
+  const boost::system::error_code &ec, std::size_t bytes)
 {
+  if (ec) {
+    std::cout << "ERROR: handle_write: " << ec.message ();
+    return;
+  }
   std::cout << "Sent ping." << std::endl;
 
-  m_tcp_socket.async_read_some (
-    asio::buffer (m_server_pong, 4),
+  m_sock_tcp->async_read_some (
+    asio::buffer (m_buff, 4),
     std::bind (
       &Client::handle_pong, this, std::placeholders::_1,
       std::placeholders::_2));
@@ -105,15 +119,29 @@ Client::handle_write (
 
 void
 Client::handle_pong (
-  const boost::system::error_code &error, std::size_t bytes_transferred)
+  const boost::system::error_code &ec, std::size_t bytes)
 {
-  if (bytes_transferred == 0) {
-    std::cout << "Didn't recieve pong" << std::endl;
-    std::cout << error.message ();
+  if (ec) {
+    std::cout << "ERROR: handle_pong: " << ec.message ();
     return;
   }
 
-  if (m_server_pong == "pong") {
+  if (bytes == 0) {
+    std::cout << "Didn't recieve pong" << std::endl;
+    return;
+  }
+
+  std::string pong (m_buff);
+  if (pong == "ping") {
     std::cout << "recieved pong" << std::endl;
+  }
+}
+
+void
+Client::close ()
+{
+  m_sock_udp->close ();
+  if (m_sock_udp->is_open ()) {
+    m_sock_tcp->close ();
   }
 }
