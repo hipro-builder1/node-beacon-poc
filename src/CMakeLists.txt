@@ -15,6 +15,7 @@ add_library (tcp-server-lib
 	tcp-session.h
 	udp-server.cxx
 	udp-server.h
+	protocol.h
 	)
 
 target_link_libraries(tcp-server-lib
