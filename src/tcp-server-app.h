@@ -24,15 +24,16 @@
 class TcpServerApp
 {
 public:
-  TcpServerApp(short port)
-    : m_acceptor(
+  TcpServerApp(uint16_t port)
+    : m_port(port),
+      m_acceptor(
         m_io_service,
         boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port))
   {
     start_accept();
   }
   ~TcpServerApp();
-  void run(std::string broadcast_ip,std::string broadcast_port,std::string tcp_ip_port);
+  void run(uint16_t broadcast_port, std::string tcp_ip);
 
 private:
   void sigint_handler(const boost::system::error_code& error, int signal_num);
@@ -42,8 +43,9 @@ private:
   void stop();
 
 private:
-  std::vector<std::shared_ptr<TcpSession>> m_vector_tcp_session;
+  std::vector<std::unique_ptr<TcpSession>> m_vector_tcp_session;
   std::unique_ptr<UdpServer> m_udp_broadcast_server;
+  const uint16_t m_port;
   std::thread m_th_udp_server;
   boost::asio::io_service m_io_service;
   boost::asio::ip::tcp::acceptor m_acceptor;
