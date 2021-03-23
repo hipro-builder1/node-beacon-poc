@@ -26,9 +26,12 @@ TcpSession::handle_read(
   if (!error) {
     boost::asio::async_write(
       m_socket, boost::asio::buffer(m_data, bytes_transferred),
-      boost::bind(
-        &TcpSession::handle_write, this, boost::asio::placeholders::error));
+      boost::asio::transfer_all(),
+      std::bind(&TcpSession::handle_write, this, std::placeholders::_1));
     std::cout << "Pong Send" << std::endl;
+  } else {
+    std::cerr << "async_read error: connection droped";
+    m_socket.close();
   }
 }
 
@@ -42,6 +45,9 @@ TcpSession::handle_write(const boost::system::error_code& error)
         &TcpSession::handle_read, this, std::placeholders::_1,
         std::placeholders::_2));
     std::cout << "Got Ping" << std::endl;
+  } else {
+    std::cerr << "async_write error: connection droped";
+    m_socket.close();
   }
 }
 

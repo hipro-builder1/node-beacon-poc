@@ -34,7 +34,7 @@ private:
   boost::asio::ip::tcp::socket m_socket;
   enum
   {
-    MAX_LENGTH = 1024
+    MAX_LENGTH = 4
   };
   char m_data[MAX_LENGTH];
 };
