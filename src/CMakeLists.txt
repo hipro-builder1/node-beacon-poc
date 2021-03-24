@@ -15,6 +15,7 @@ add_library (tcp-server-lib
 	tcp-session.h
 	udp-server.cxx
 	udp-server.h
+	protocol.h
 	)
 
 set (Boost_USE_STATIC_LIBS ON)

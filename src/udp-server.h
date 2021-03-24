@@ -23,12 +23,20 @@
 class UdpServer
 {
 public:
-  UdpServer(std::string ip, std::string port, std::string tcp_ip_port);
+  UdpServer(uint16_t port, std::string tcp_ip, uint16_t tcp_port);
+  ~UdpServer()
+  {
+    if (m_broadcast_msg_data != nullptr)
+      free(m_broadcast_msg_data);
+  }
   void broadcast_data();
   void stop();
 
 private:
   std::string m_tcp_ip_port;
+  void* m_broadcast_msg_data = nullptr;
+  const std::string broadcast_ip = "255.255.255.255";
+  const int sleep_time = 5;
   bool m_thread_run;
   boost::asio::io_service m_io_service;
   boost::asio::ip::udp::socket m_socket;
