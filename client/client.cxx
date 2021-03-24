@@ -52,6 +52,12 @@ Client::handle_receive (const bsys::error_code &ec, std::size_t bytes)
     return;
   }
 
+  if (bytes == 0) {
+    std::cout << "ERROR: No bytes transferred, exiting..." << std::endl;
+    this->close ();
+    return;
+  }
+
   tcp_ip_port_s addr;
   ip::address_v4 server_addr;
   try {
@@ -71,7 +77,7 @@ Client::handle_receive (const bsys::error_code &ec, std::size_t bytes)
     std::bind (&Client::handle_connect, this, std::placeholders::_1));
 
   // wait for next broadcast
-  start ();
+  this->start ();
 }
 
 void
@@ -79,6 +85,7 @@ Client::handle_connect (const bsys::error_code &ec)
 {
   if (ec) {
     std::cout << "ERROR: handle_connect: " << ec.message ();
+    this->close ();
     return;
   }
 
@@ -99,6 +106,13 @@ Client::handle_write (
     std::cout << "ERROR: handle_write: " << ec.message ();
     return;
   }
+
+  if (bytes == 0) {
+    std::cout << "ERROR: No bytes transferred, exiting..." << std::endl;
+    this->close ();
+    return;
+  }
+
   std::cout << "Sent ping." << std::endl;
 
   m_sock_tcp->async_read_some (
@@ -134,8 +148,10 @@ Client::handle_pong (
 void
 Client::close ()
 {
+  m_sock_udp->shutdown (asio::socket_base::shutdown_type::shutdown_both);
   m_sock_udp->close ();
   if (m_sock_udp->is_open ()) {
+    m_sock_tcp->shutdown (asio::socket_base::shutdown_type::shutdown_both);
     m_sock_tcp->close ();
   }
 }

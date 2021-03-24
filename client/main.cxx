@@ -27,12 +27,6 @@ int main (int argc, char **argv)
 
   try {
     port_no = std::stoi (port);
-  } catch (std::invalid_argument ia) {
-    std::cerr << "ERROR : Invalid <port> format." << std::endl;
-    return 1;
-  } catch (std::out_of_range oor) {
-    std::cerr << "ERROR : Invalid <port> value." << std::endl;
-    return 1;
   } catch (std::exception ex) {
     std::cerr << "ERROR : Invalid <port> provided." << std::endl;
     return 1;
