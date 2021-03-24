@@ -11,11 +11,12 @@
 #define HIPRO__28d548ec_8b8b_11eb_a950_f921648db99a
 
 #include <stdint.h>
-#include <arpa/inet.h>
+
+#include <boost/asio/ip/address_v4.hpp>
 
 struct broadcast_tcp_ip_port_s
 {
-	struct in_addr tcp_ip;
+	boost::asio::ip::address_v4::bytes_type tcp_ip;
 	uint16_t tcp_port;
 } __attribute__((packed));
 
