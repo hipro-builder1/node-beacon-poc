@@ -10,6 +10,12 @@
 #define IP_INDEX 0
 #define PORT_INDEX 1
 
+struct tcp_ip_port_s
+{
+	boost::asio::ip::address_v4::bytes_type tcp_ip;
+	uint16_t tcp_port;
+} __attribute__((packed));
+
 Client::Client (asio::io_context &io_context, int port)
   : m_io_context (io_context),
     m_port (port)
@@ -46,38 +52,14 @@ Client::handle_receive (const bsys::error_code &ec, std::size_t bytes)
     return;
   }
 
-  std::string str_data(m_buff, bytes);
-  std::cout << "Recieved from server : " << str_data << std::endl;
-
-  std::vector<std::string> data;
-  boost::split (data, str_data, boost::is_any_of (":"));
+  tcp_ip_port_s addr;
+  memcpy (&addr, m_buff, sizeof (addr));
 
   bsys::error_code err;
-  auto server_addr = ip::make_address_v4 (data[IP_INDEX], err);
-  if (err) {
-    std::cout << "Recieved corrupted IP from server, aborting..." << std::endl;
-    std::cout << "ERROR : " << err.message () << std::endl;
-    return;
-  }
-
-  uint16_t tcp_port_no;
-
-  try {
-    tcp_port_no = std::stoi (data[PORT_INDEX]);
-  } catch (std::invalid_argument ia) {
-    std::cerr << "Corrupted port format: " << ia.what () << std::endl;
-    return;
-  } catch (std::out_of_range oor) {
-    std::cerr << "Corrupted port format: " << oor.what () << std::endl;
-    return;
-  } catch (std::exception ex) {
-    std::cerr << "Corrupted port format: " << ex.what () << std::endl;
-    return;
-  }
+  auto server_addr = ip::make_address_v4 (addr.tcp_ip);
 
   m_sock_tcp = std::make_unique<ip::tcp::socket> (m_io_context);
-  auto server_ep =  ip::tcp::endpoint (
-    ip::make_address_v4 (data[IP_INDEX]), tcp_port_no);
+  auto server_ep =  ip::tcp::endpoint (server_addr, addr.tcp_port);
   m_sock_tcp->async_connect (
     server_ep,
     std::bind (&Client::handle_connect, this, std::placeholders::_1));
@@ -132,9 +114,12 @@ Client::handle_pong (
   }
 
   std::string pong (m_buff);
-  if (pong == "ping") {
-    std::cout << "recieved pong" << std::endl;
+  if (pong != "ping") {
+    std::cout << "recieved " << m_buff << std::endl;
+    return;
   }
+
+  std::cout << "recieved ping" << std::endl;
 }
 
 void
