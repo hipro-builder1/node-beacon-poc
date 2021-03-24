@@ -36,7 +36,7 @@ void
 Client::start ()
 {
   m_sock_udp->async_receive_from (
-    asio::buffer (m_buff), *m_ep_udp,
+    asio::buffer (m_udp_buff), *m_ep_udp,
     std::bind (
       &Client::handle_receive, this, std::placeholders::_1,
       std::placeholders::_2));
@@ -53,7 +53,7 @@ Client::handle_receive (const bsys::error_code &ec, std::size_t bytes)
   }
 
   tcp_ip_port_s addr;
-  memcpy (&addr, m_buff, sizeof (addr));
+  memcpy (&addr, m_udp_buff, sizeof (addr));
 
   bsys::error_code err;
   auto server_addr = ip::make_address_v4 (addr.tcp_ip);
@@ -79,7 +79,7 @@ Client::handle_connect (const bsys::error_code &ec)
   std::cout << "Connected to server" << std::endl;
 
   m_sock_tcp->async_write_some (
-    asio::buffer ("ping"),
+    asio::buffer ("ping", 4),
     std::bind (
       &Client::handle_write, this, std::placeholders::_1,
       std::placeholders::_2));
@@ -96,7 +96,7 @@ Client::handle_write (
   std::cout << "Sent ping." << std::endl;
 
   m_sock_tcp->async_read_some (
-    asio::buffer (m_buff, 4),
+    asio::buffer (m_tcp_buff, 4),
     std::bind (
       &Client::handle_pong, this, std::placeholders::_1,
       std::placeholders::_2));
@@ -116,9 +116,9 @@ Client::handle_pong (
     return;
   }
 
-  std::string pong (m_buff);
+  std::string pong (m_tcp_buff);
   if (pong != "ping") {
-    std::cout << "recieved " << m_buff << std::endl;
+    std::cout << "recieved " << m_tcp_buff << std::endl;
     return;
   }
 

@@ -29,5 +29,6 @@ private:
   std::unique_ptr <ip::udp::socket> m_sock_udp;
   std::unique_ptr <ip::tcp::socket> m_sock_tcp;
 
-  char m_buff[1024];
+  char m_udp_buff[1024];
+  char m_tcp_buff[1024];
 };
