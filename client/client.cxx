@@ -63,6 +63,9 @@ Client::handle_receive (const bsys::error_code &ec, std::size_t bytes)
   m_sock_tcp->async_connect (
     server_ep,
     std::bind (&Client::handle_connect, this, std::placeholders::_1));
+
+  // wait for next broadcast
+  start ();
 }
 
 void
