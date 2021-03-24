@@ -53,10 +53,16 @@ Client::handle_receive (const bsys::error_code &ec, std::size_t bytes)
   }
 
   tcp_ip_port_s addr;
-  memcpy (&addr, m_udp_buff, sizeof (addr));
+  ip::address_v4 server_addr;
+  try {
+    memcpy (&addr, m_udp_buff, sizeof (addr));
 
-  bsys::error_code err;
-  auto server_addr = ip::make_address_v4 (addr.tcp_ip);
+    bsys::error_code err;
+    server_addr = ip::make_address_v4 (addr.tcp_ip);
+  } catch (std::exception e) {
+    std::cout << "Got corrupted ip from server: " << e.what () << std::endl;
+    return;
+  }
 
   m_sock_tcp = std::make_unique<ip::tcp::socket> (m_io_context);
   auto server_ep =  ip::tcp::endpoint (server_addr, addr.tcp_port);
