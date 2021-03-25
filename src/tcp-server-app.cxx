@@ -10,11 +10,20 @@
 #include "tcp-server-app.h"
 #include "tcp-session.h"
 
+
+TcpServerApp::~TcpServerApp()
+{
+	for( int i = 0; i < m_vector_tcp_session.size(); i++) {
+		m_vector_tcp_session[i].reset(nullptr);
+	}
+	m_vector_tcp_session.clear();
+}
+
 void
 TcpServerApp::start_accept()
 {
 
-  m_vector_tcp_session.push_back(std::make_shared<TcpSession>(m_io_service));
+  m_vector_tcp_session.emplace_back(std::make_unique<TcpSession>(m_io_service));
   m_acceptor.async_accept(
     (m_vector_tcp_session.back())->socket(),
     boost::bind(
@@ -22,17 +31,20 @@ TcpServerApp::start_accept()
       boost::asio::placeholders::error));
 }
 void
-TcpServerApp::run(std::string tcp_ip_port)
+TcpServerApp::run(uint16_t broadcast_port,std::string tcp_ip)
 {
   m_udp_broadcast_server =
-    std::make_unique<UdpServer>("255.255.255.255", "7000", tcp_ip_port);
+    std::make_unique<UdpServer>(broadcast_port, tcp_ip, m_port);
+
   m_th_udp_server = std::move(
     std::thread(&UdpServer::broadcast_data, m_udp_broadcast_server.get()));
 
   boost::asio::signal_set signals(m_io_service, SIGINT, SIGTERM);
+  
   signals.async_wait(std::bind(
     &TcpServerApp::sigint_handler, this, std::placeholders::_1,
     std::placeholders::_2));
+  
   m_io_service.run();
 }
 
@@ -43,7 +55,8 @@ TcpServerApp::handle_accept(
   if (!error) {
     tcp_session->start();
   } else {
-    // delete tcp_session;
+	  std::cerr << "Error in async_accept "<< error.value() << std::endl; 
+	  tcp_session = nullptr;
   }
   start_accept();
 }
@@ -61,6 +74,7 @@ TcpServerApp::stop()
 {
   m_udp_broadcast_server->stop();
   m_th_udp_server.join();
+  m_udp_broadcast_server.reset(nullptr);
   m_io_service.stop();
 }
 

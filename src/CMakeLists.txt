@@ -15,7 +15,12 @@ add_library (tcp-server-lib
 	tcp-session.h
 	udp-server.cxx
 	udp-server.h
+	protocol.h
 	)
+
+set (Boost_USE_STATIC_LIBS ON)
+find_package (Boost REQUIRED COMPONENTS
+  log thread system)
 
 target_link_libraries(tcp-server-lib
 	${Boost_LIBRARIES}
