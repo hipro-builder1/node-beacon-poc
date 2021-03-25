@@ -115,8 +115,8 @@ Client::handle_write (
 
   std::cout << "Sent ping." << std::endl;
 
-  m_sock_tcp->async_read_some (
-    asio::buffer (m_tcp_buff, 4),
+  asio::async_read (
+    *m_sock_tcp, asio::buffer (m_tcp_buff, 4), asio::transfer_all (),
     std::bind (
       &Client::handle_pong, this, std::placeholders::_1,
       std::placeholders::_2));
