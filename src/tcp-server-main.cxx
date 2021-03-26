@@ -50,6 +50,7 @@ main(int argc, char* argv[])
   uint16_t broadcast_port = static_cast<uint16_t>(broadcast_port_int);
 
   TcpServerApp tcp_server_app(tcp_port_short);
+  tcp_server_app.start();
   tcp_server_app.run(broadcast_port, tcp_ip);
 
   return EXIT_SUCCESS;
