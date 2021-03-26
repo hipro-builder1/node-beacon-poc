@@ -16,6 +16,7 @@
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+#include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/signal_set.hpp>
 
 #include "tcp-session.h"
@@ -28,19 +29,18 @@ public:
     : m_port(port),
       m_acceptor(
         m_io_service,
-        boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port))
-  {
-    start_accept();
-  }
-  ~TcpServerApp();
+        boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port)),
+      m_socket(m_io_service)
+  {}
+  void start();
   void run(uint16_t broadcast_port, std::string tcp_ip);
 
 private:
   void sigint_handler(const boost::system::error_code& error, int signal_num);
   void start_accept();
-  void handle_accept(
-    TcpSession* tcp_session, const boost::system::error_code& error);
+  void handle_accept(const boost::system::error_code& error);
   void stop();
+  void destroy_session(TcpSession* tcp_session);
 
 private:
   std::vector<std::unique_ptr<TcpSession>> m_vector_tcp_session;
@@ -49,6 +49,7 @@ private:
   std::thread m_th_udp_server;
   boost::asio::io_service m_io_service;
   boost::asio::ip::tcp::acceptor m_acceptor;
+  boost::asio::ip::tcp::socket m_socket;
 };
 
 #endif // HIPRO__b6f033ae_87a7_11eb_8e3f_b9b5ee5d4b95
