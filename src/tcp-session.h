@@ -10,19 +10,22 @@
 #ifndef HIPRO__bcb24458_87a7_11eb_8e3f_b9b5ee5d4b95
 #define HIPRO__bcb24458_87a7_11eb_8e3f_b9b5ee5d4b95
 
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
 #include <cstdlib>
 #include <iostream>
+#include <functional>
+
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
 
 class TcpSession
 {
 public:
-  TcpSession(boost::asio::io_service& io_service) : m_socket(io_service) {}
-  boost::asio::ip::tcp::socket& socket()
-  {
-    return m_socket;
-  }
+  TcpSession(
+    boost::asio::ip::tcp::socket&& socket,
+    std::function<void(TcpSession*)> callback_function)
+    : m_socket(std::move(socket)), m_do_callback(callback_function)
+  {}
+
   void start();
 
 private:
@@ -32,9 +35,10 @@ private:
 
 private:
   boost::asio::ip::tcp::socket m_socket;
+  std::function<void(TcpSession*)> m_do_callback;
   enum
   {
-    MAX_LENGTH = 1024
+    MAX_LENGTH = 4
   };
   char m_data[MAX_LENGTH];
 };

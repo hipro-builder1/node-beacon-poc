@@ -20,20 +20,24 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
 
+#include "protocol.h"
+
 class UdpServer
 {
 public:
-  UdpServer(std::string ip, std::string port, std::string tcp_ip_port);
+  UdpServer(uint16_t port, std::string tcp_ip, uint16_t tcp_port);
   void broadcast_data();
   void stop();
 
 private:
   std::string m_tcp_ip_port;
+  struct broadcast_tcp_ip_port_s m_broadcast_data_packet;
+  const std::string broadcast_ip = "255.255.255.255";
+  const int sleep_time = 5;
   bool m_thread_run;
   boost::asio::io_service m_io_service;
   boost::asio::ip::udp::socket m_socket;
   boost::asio::ip::udp::endpoint m_remote_endpoint;
-  boost::system::error_code m_ignored_error;
 };
 
 #endif // HIPRO__ed1b19e2_7bd3_11eb_baf6_69de8c48ade4
