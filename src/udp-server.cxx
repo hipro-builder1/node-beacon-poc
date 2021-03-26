@@ -50,6 +50,9 @@ void
 UdpServer::stop()
 {
   m_thread_run = false;
+  boost::system::error_code ec;
+  m_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_send, ec);
+  m_socket.close();
 }
 
 /*
