@@ -12,7 +12,6 @@
 #include <iostream>
 
 #include "udp-server.h"
-#include "protocol.h"
 
 UdpServer::UdpServer(uint16_t port, std::string tcp_ip, uint16_t tcp_port)
   : m_socket(m_io_service), m_tcp_ip_port(tcp_ip), m_thread_run(true)
@@ -22,32 +21,27 @@ UdpServer::UdpServer(uint16_t port, std::string tcp_ip, uint16_t tcp_port)
   m_socket.set_option(option);
   m_remote_endpoint = boost::asio::ip::udp::endpoint(
     boost::asio::ip::address::from_string(broadcast_ip.data()), port);
-  m_broadcast_msg_data = malloc(sizeof(struct broadcast_tcp_ip_port_s));
-  if (m_broadcast_msg_data == nullptr) {
-    std::string err_str("malloc error: ");
-    err_str += std::strerror(errno);
-    std::runtime_error(err_str.data());
-  }
-  struct broadcast_tcp_ip_port_s* broadcast_tcp_ip_port =
-    static_cast<struct broadcast_tcp_ip_port_s*>(m_broadcast_msg_data);
+
   boost::asio::ip::address_v4 ip = boost::asio::ip::make_address_v4(tcp_ip);
-  broadcast_tcp_ip_port->tcp_ip = ip.to_bytes();
-  broadcast_tcp_ip_port->tcp_port = tcp_port;
+
+  m_broadcast_data_packet.tcp_ip = ip.to_bytes();
+  m_broadcast_data_packet.tcp_port = tcp_port;
 }
 
 void
 UdpServer::broadcast_data()
 {
-  try {
-    while (m_thread_run) {
-      std::this_thread::sleep_for(std::chrono::seconds(sleep_time));
-      m_socket.send_to(
-        boost::asio::buffer(
-          m_broadcast_msg_data, sizeof(struct broadcast_tcp_ip_port_s)),
-        m_remote_endpoint, 0, m_ignored_error);
+  boost::system::error_code ignored_error;
+  while (m_thread_run) {
+    std::this_thread::sleep_for(std::chrono::seconds(sleep_time));
+    m_socket.send_to(
+      boost::asio::buffer(
+        (void*)&m_broadcast_data_packet,
+        sizeof(struct broadcast_tcp_ip_port_s)),
+      m_remote_endpoint, 0, ignored_error);
+    if (ignored_error) {
+      std::cout << "Udp broadcast Error: " << ignored_error.category().name() << std::endl;
     }
-  } catch (const boost::system::system_error& ex) {
-    std::cout << "udp broadcast error " << ex.what() << std::endl;
   }
 }
 
