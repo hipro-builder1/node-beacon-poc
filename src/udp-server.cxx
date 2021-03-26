@@ -40,7 +40,8 @@ UdpServer::broadcast_data()
         sizeof(struct broadcast_tcp_ip_port_s)),
       m_remote_endpoint, 0, ignored_error);
     if (ignored_error) {
-      std::cout << "Udp broadcast Error: " << ignored_error.category().name() << std::endl;
+      std::cout << "Udp broadcast Error: " << ignored_error.category().name()
+                << std::endl;
     }
   }
 }
